@@ -15,9 +15,22 @@ import matplotlib.pyplot as plt
 
 BODIES = bd.initBodies()
 
+# list of existing phases:
+# exploring
+# lf_target
+# shooting
+# back_to_base
+# reload
 
-def get_bodies():
-    return BODIES
+ROBOTS = {"bertha": {"id": 71, "phase": "exploring", "shots_per_reload": 1, "remaining_bullets": 1, "next_phase": "exploring"}}
+
+
+def get_body_infos(id: int):
+    for body in BODIES:
+        if body.getID() == id:
+            return body
+
+    return None
 
 
 def deduce_bot_position(data, cam_offset=[0, 0, 0], cam_rot=[0, 0]):
@@ -39,7 +52,6 @@ def deduce_bot_position(data, cam_offset=[0, 0, 0], cam_rot=[0, 0]):
 
                     pos_offset = [elm.getPos(), 0]
 
-
                     pos_offset[1] = utils.angle_bound(marker["pitch"] - 180 + elm.getRot())
 
                     pos_offset[0][0] += dist2D * math.sin(math.radians(pos_offset[1] - 180))
@@ -49,23 +61,89 @@ def deduce_bot_position(data, cam_offset=[0, 0, 0], cam_rot=[0, 0]):
 
         return None
 
+def deduce_marker_position(data, self_body):
+    return [[0, 0, 0], 0]
+
+
+
+
+def update_bodies(data, self_body, cam_offset=[0, 0, 0], cam_rot=[0, 0]):
+    for marker in data["markers"]:
+        if 1 <= marker["id"] <= 15:  # find targets
+            temp = deduce_marker_position(data, self_body)
+            found = False
+            for elm in BODIES:
+                if elm.getID() == marker["id"]:
+                    elm.update([temp[0][0], temp[0][1], temp[0][2]], temp[1])
+                    break
+            if not found:
+                BODIES.append(Body(marker["id"], [temp[0][0], temp[0][1], temp[0][2]], temp[1], BodyType.TARGET))
+
+
+
+
 
 def bertha_ai(data):
+    # change phase if needed
+    if (ROBOTS["bertha"]["next_phase"] != ROBOTS["bertha"]["phase"]):
+        ROBOTS["bertha"]["phase"] = ROBOTS["bertha"]["next_phase"]
+
+        print("Phase changed to", ROBOTS["bertha"]["phase"])
+
+
+    # future request to the client
+    request = json.loads("{'req':[]}")
+    req = []
+
+    # determine pos if possible
     new_pos = deduce_bot_position(data, cam_rot=[0, 0])
-
-
     if new_pos is not None:
         print("New coords!", new_pos)
         found = False
         for body in BODIES:
             if body.id == 71:
-                print("updating body")
                 body.update(new_pos[0], new_pos[1])
                 found = True
                 break
 
         if not found:
             BODIES.append(Body(71, new_pos[0], new_pos[1], BodyType.CONNECTED_BODY))
+
+
+    # update bodies (auto exploration)
+    self = get_body_infos(71)
+    update_bodies(data, self)
+
+
+    # --- AI ---
+
+
+    if ROBOTS["bertha"]["phase"] == "exploring":
+        pass
+    elif ROBOTS["bertha"]["phase"] == "lf_target":
+        # find the closest target
+        closest_target = None
+        for body in BODIES:
+            if body.getType() == BodyType.TARGET:
+                if closest_target is None:
+                    closest_target = body
+                else:
+                    if mathutils.distance2D(body.get2DPos()[0], body.get2DPos()[1]) < mathutils.distance2D(
+                            body.get2DPos()[0], body.get2DPos()[1]):
+                        closest_target = body
+
+        # find the right rotation to face the target (in degrees), 10 degrees of freedom
+        if closest_target is not None:
+            req.append({"type": "rotate", "value": 0.3})
+
+    elif ROBOTS["bertha"]["phase"] == "shooting":
+        req.append({"type": "shoot", "value": 1})
+    elif ROBOTS["bertha"]["phase"] == "back_to_base":
+        pass
+
+
+    request["req"] = req
+    return json.dumps(request)
 
 
 class ClientConn(threading.Thread):
@@ -81,10 +159,9 @@ class ClientConn(threading.Thread):
         print('[{}]'.format(ut.get_time_str()), '{}'.format(data))
 
         # --- Process data ---
-        self.process_data(data)
 
         # --- Send data back to the client ---
-        self.client_socket.sendall("got your message".encode('utf-8'))
+        self.client_socket.sendall(self.process_data(data).encode('utf-8'))
 
         self.client_socket.close()
 
@@ -92,7 +169,7 @@ class ClientConn(threading.Thread):
         data = json.loads(data)
 
         if data["sender"] == "esieabot-bcc6b4":
-            bertha_ai(data)
+            return bertha_ai(data)
 
         return ""
 

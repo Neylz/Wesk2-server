@@ -28,7 +28,7 @@ class Body:
         self.seen = False
         self.lastSeen = lastSeen
 
-    def update(self, Pos: list, Rot: list):
+    def update(self, Pos: list, Rot: int):
         if self.type == BodyType.FIXED_MARKER:
             print("Can't update fixed marker")
             return -1

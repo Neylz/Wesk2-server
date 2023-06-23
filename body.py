@@ -1,6 +1,9 @@
 from enum import Enum
 import datetime
+import time
 from typing import List
+
+
 
 
 # try:
@@ -17,13 +20,13 @@ class BodyType(Enum):
 
 
 class Body:
-    def __init__(self, id: int, Pos: list, Rot: list, type: BodyType):
+    def __init__(self, id: int, Pos: list, Rot: int, type: BodyType, lastSeen=time.time()):
         self.id = id
         self.Pos = Pos
         self.Rot = Rot
         self.type = type
         self.seen = False
-        self.lastSeen = datetime.datetime.now()
+        self.lastSeen = lastSeen
 
     def update(self, Pos: list, Rot: list):
         if self.type == BodyType.FIXED_MARKER:
@@ -33,6 +36,7 @@ class Body:
         self.Pos = Pos
         self.Rot = Rot
         self.seen = True
+        self.lastSeen = time.time()
 
     def getPos(self):
         return self.Pos
@@ -54,25 +58,25 @@ class Body:
 
 def initBodies():
     out = [
-        Body(21, [57.5, 0, 125], [0, 180, 0], BodyType.FIXED_MARKER),
-        Body(22, [112.5, 0, 125], [0, 180, 0], BodyType.FIXED_MARKER),
-        Body(23, [167.5, 0, 125], [0, 180, 0], BodyType.FIXED_MARKER),
-        Body(24, [222.5, 0, 125], [0, 180, 0], BodyType.FIXED_MARKER),
-        Body(25, [277.5, 0, 125], [0, 180, 0], BodyType.FIXED_MARKER),
+        Body(21, [57.5, 0, 125], 180, BodyType.FIXED_MARKER, lastSeen=0),
+        Body(22, [112.5, 0, 125], 180, BodyType.FIXED_MARKER, lastSeen=0),
+        Body(23, [167.5, 0, 125], 180, BodyType.FIXED_MARKER, lastSeen=0),
+        Body(24, [222.5, 0, 125], 180, BodyType.FIXED_MARKER, lastSeen=0),
+        Body(25, [277.5, 0, 125], 180, BodyType.FIXED_MARKER, lastSeen=0),
 
-        Body(26, [277.5, 0, 0], [0, 0, 0], BodyType.FIXED_MARKER),
-        Body(27, [222.5, 0, 0], [0, 0, 0], BodyType.FIXED_MARKER),
-        Body(28, [167.5, 0, 0], [0, 0, 0], BodyType.FIXED_MARKER),
-        Body(29, [112.5, 0, 0], [0, 0, 0], BodyType.FIXED_MARKER),
-        Body(30, [57.5, 0, 0], [0, 0, 0], BodyType.FIXED_MARKER),
+        Body(26, [277.5, 0, 0], 0, BodyType.FIXED_MARKER, lastSeen=0),
+        Body(27, [222.5, 0, 0], 0, BodyType.FIXED_MARKER, lastSeen=0),
+        Body(28, [167.5, 0, 0], 0, BodyType.FIXED_MARKER, lastSeen=0),
+        Body(29, [112.5, 0, 0], 0, BodyType.FIXED_MARKER, lastSeen=0),
+        Body(30, [57.5, 0, 0], 0, BodyType.FIXED_MARKER, lastSeen=0),
 
-        Body(31, [335, 0, 62.5], [0, -90, 0], BodyType.FIXED_MARKER),
-        Body(32, [335, 0, 26], [0, -90, 0], BodyType.FIXED_MARKER),
-        Body(33, [335, 0, 99], [0, -90, 0], BodyType.FIXED_MARKER),
+        Body(31, [335, 0, 62.5], -90, BodyType.FIXED_MARKER, lastSeen=0),
+        Body(32, [335, 0, 26], -90, BodyType.FIXED_MARKER, lastSeen=0),
+        Body(33, [335, 0, 99], -90, BodyType.FIXED_MARKER, lastSeen=0),
 
-        Body(34, [0, 0, 62.5], [0, 90, 0], BodyType.FIXED_MARKER),
-        Body(35, [0, 0, 99], [0, 90, 0], BodyType.FIXED_MARKER),
-        Body(36, [0, 0, 26], [0, 90, 0], BodyType.FIXED_MARKER)
+        Body(34, [0, 0, 62.5], 90, BodyType.FIXED_MARKER, lastSeen=0),
+        Body(35, [0, 0, 99], 90, BodyType.FIXED_MARKER, lastSeen=0),
+        Body(36, [0, 0, 26], 90, BodyType.FIXED_MARKER, lastSeen=0)
     ]
 
     return out

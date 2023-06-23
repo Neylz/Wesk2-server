@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 from body import Body, BodyType
 from typing import List
+import time
 
 
 class TerrainWindow:
@@ -20,7 +21,8 @@ class TerrainWindow:
         point = self.ax.scatter(x, y, color=color, alpha=opacity)
         self.points[(x, y)] = point
 
-    def add_points(self, points: List[Body], color='blue', opacity=1.0):
+    def update_map(self, points: List[Body], color='blue', opacity=-1.0):
+        self.remove_everything()
         for point in points:
             p = point.get2DPos()
 
@@ -34,7 +36,12 @@ class TerrainWindow:
                 case BodyType.CONNECTED_BODY:
                     color = 'orange'
 
-            self.add_point(p[0], p[1], color=color)
+            if opacity == -1.0:
+                opacity = 1 - 0.1*(time.time() - point.lastSeen)
+                if opacity < 0.2:
+                    opacity = 0.2
+
+            self.add_point(p[0], p[1], color=color, opacity=opacity)
 
     def move_point(self, old_x, old_y, new_x, new_y):
         if (old_x, old_y) in self.points:
@@ -42,6 +49,12 @@ class TerrainWindow:
             point.set_offsets([new_x, new_y])
             self.points[(new_x, new_y)] = point
             del self.points[(old_x, old_y)]
+
+
+    def remove_everything(self):
+        for point in self.points.values():
+            point.remove()
+        self.points = {}
 
     def remove_point(self, x, y):
         if (x, y) in self.points:
